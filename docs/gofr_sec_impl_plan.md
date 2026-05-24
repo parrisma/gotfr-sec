@@ -406,6 +406,50 @@ Deliver the runtime contract that lets services verify JWT signatures locally an
 
 The `gofr-sec` runtime contract is stable enough for a consuming GOFR service to adopt it without using the old shared-secret issuer path.
 
+## Phase 7.5: Manual Verification Stack Before The Pilot Cutover
+
+### Objective
+
+Freeze a manual verification slice before Phase 8 so an operator can run Keycloak, Vault, and `gofr-sec` on the same dev Docker network and exercise the real identity, bootstrap, mint, storage, and runtime authorization path by hand.
+
+### Small-Step Sequence
+
+1. Verify which Docker network the active `gofr-sec` dev container is already attached to and treat that network as the only supported Phase 7.5 test network.
+2. Add a dedicated dev compose file under `lib/gofr-common/docker/` that starts a disposable Keycloak and Vault stack on that same external network without changing the normal automated test runner.
+3. Add a minimal Keycloak realm import that creates a repeatable realm and direct-grant client whose access tokens carry the audience value `gofr-sec` expects plus the subject claims `gofr-sec` uses for bootstrap and registration.
+4. Keep the manual Phase 7.5 Vault service explicitly separate from the existing shared or production-like Vault compose so the hand-test path stays disposable and easy to reset.
+5. Document how to provision one disposable runtime signing key secret in Vault before the mint step so the Phase 7 runtime signer reads real key material from Vault.
+6. Document the exact `GOFRSEC_*` environment values needed to run `gofr-sec` against that Keycloak and Vault pair from inside the dev container, including the fully prefixed signing-key Vault path.
+7. Document creation of two Keycloak users: one future GOFR admin subject and one normal user to receive a runtime token.
+8. Document how to log in as the future GOFR admin, decode the Keycloak access token to recover its stable `sub`, and restart `gofr-sec` with `GOFRSEC_BOOTSTRAP_ADMIN_SUBS` set to that value.
+9. Document self-registration for both users through `POST /v1/me/register` so the local GOFR registry and Keycloak subjects are linked before admin-only operations begin.
+10. Document one minimal admin workflow: create one non-system GOFR group, add the normal user to that group, and mint exactly one runtime JWT for that user.
+11. Document direct Vault inspection of the user profile, membership, canonical token record, group token index, user token index, and runtime signing-key material.
+12. Document one small consumer-side probe, ideally using the new `gofr-common` runtime authorizer, that locally verifies the minted JWT and then asks `POST /v1/runtime/authorize` for both an allow case and a deny case.
+13. Treat this phase as a pre-pilot operator checkpoint. Do not move to the first service cutover until the manual flow is repeatable end to end.
+
+### Tests To Add In This Phase
+
+- no new product tests; reuse the Phase 7 automated suites and add one written manual verification walkthrough
+- `docs/phase_7_5_manual_verification.md`
+- `lib/gofr-common/docker/system-compose.dev.yml`
+- `lib/gofr-common/docker/keycloak/setup-dev-realm.sh`
+- `lib/gofr-common/docker/vault/seed-dev-signing-key.sh`
+- `lib/gofr-common/docker/start-system-dev.sh`
+- `lib/gofr-common/docker/stop-system-dev.sh`
+
+### Validation Commands
+
+- `docker compose -f lib/gofr-common/docker/system-compose.dev.yml config`
+- `lib/gofr-common/docker/start-system-dev.sh`
+- `lib/gofr-common/docker/stop-system-dev.sh --volumes`
+- `./scripts/run_tests.sh --integration test/runtime/`
+- `lib/gofr-common/scripts/run_tests.sh --unit tests/test_runtime_authorization_flow.py`
+
+### Exit Gate
+
+An operator can create Keycloak users, provision Vault signing material, bootstrap one GOFR admin subject, register users, mint one runtime JWT, inspect the expected Vault artifacts, and observe both allow and deny runtime authorization decisions before the first pilot-service cutover starts.
+
 ## Phase 8: Pilot Migration, Script Retirement, And Hardening
 
 ### Objective
@@ -467,7 +511,8 @@ For example, Phase 6 should not land as one PR. It should land as:
 2. Phase 2 in `gofr-sec`
 3. Phase 3 in `gofr-common`
 4. Phase 4 through Phase 7 across both repos as needed, with the local `gofr-sec` contract always landing before the generic consumer abstraction that depends on it
-5. Phase 8 only after the runtime contract is stable and verified in one pilot service
+5. Phase 7.5 manual verification in `gofr-sec` and `lib/gofr-common` Docker assets
+6. Phase 8 only after the runtime contract is stable and manually verified before the first pilot service cutover
 
 ## Minimal Milestones
 

@@ -5,7 +5,7 @@ description = "Security service scaffold for GOFR"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
-# Note: gofr-common is installed as editable from lib/gofr-common by docker/entrypoint-dev.sh
+# Note: gofr-common is installed as editable from lib/gofr-common by docker/base/entrypoint.sh
 dependencies = []
 
 [project.optional-dependencies]

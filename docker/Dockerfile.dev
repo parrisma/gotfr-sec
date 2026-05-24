@@ -44,7 +44,7 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /home/gofr/devroot/gofr-sec
 
 RUN mkdir -p /home/gofr/.ssh && chmod 700 /home/gofr/.ssh
-RUN uv venv /home/gofr/devroot/gofr-sec/.venv --python=python3.11
+RUN uv venv /home/gofr/devroot/gofr-sec/.venv --python=python3.12
 
 EXPOSE 8060 8061 8062
 

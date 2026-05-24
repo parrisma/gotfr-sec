@@ -21,6 +21,7 @@ R7 GIT: Never rewrite pushed history (no `--amend`, no `rebase -i`). Use follow-
 R8 PYTHON: Use UV tooling (`uv run`, `uv add`, `uv sync`, `uv pip`). Do not introduce raw `pip` or ad-hoc venv workflows.
 R9 LOGGING: Follow current repo conventions. Use shared `gofr_common` helpers when already present; otherwise stdlib `logging` is acceptable. Avoid new `print()` calls except CLI/startup banners or tests.
 R10 GIT OPS: Never `git add`/`commit`/`push` unless explicitly asked.
+R11 PATTERN DISCIPLINE: Select one clear naming/structure pattern, state it when useful, and follow it consistently. Mixed patterns create confusion, slow validation, and should be corrected at the source rather than explained around.
 
 ## A2. WORKFLOW (DECISION TREE)
 

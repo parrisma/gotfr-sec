@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Build GOFR-SEC development image
 # Requires gofr-base:latest to be built first
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -20,9 +20,8 @@ echo "======================================================================="
 
 # Check if base image exists
 if ! docker image inspect gofr-base:latest >/dev/null 2>&1; then
-    echo "Error: gofr-base:latest not found. Build it first:"
-    echo "  cd lib/gofr-common/docker && ./build-base.sh"
-    exit 1
+    echo "Base image gofr-base:latest not found - building now..."
+    bash "$PROJECT_ROOT/lib/gofr-common/docker/base/build.sh"
 fi
 
 echo ""

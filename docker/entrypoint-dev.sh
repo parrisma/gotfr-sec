@@ -37,7 +37,7 @@ mkdir -p "$PROJECT_DIR/logs"
 if [ ! -f "$VENV_DIR/bin/python" ] || [ ! -x "$VENV_DIR/bin/python" ]; then
     echo "Creating Python virtual environment..."
     cd "$PROJECT_DIR"
-    UV_VENV_CLEAR=1 uv venv "$VENV_DIR" --python=python3.11
+    UV_VENV_CLEAR=1 uv venv "$VENV_DIR" --python=python3.12
     echo "Virtual environment created at $VENV_DIR"
 fi
 
