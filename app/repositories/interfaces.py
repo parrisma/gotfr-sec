@@ -1,0 +1,59 @@
+"""Repository protocols for gofr-sec persistence layers."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from app.domain.models import (
+    AuditEvent,
+    GroupDefinition,
+    IssuedTokenRecord,
+    UserGroupMembership,
+    UserProfile,
+)
+
+
+class UserProfileRepository(Protocol):
+    def get(self, keycloak_sub: str) -> UserProfile | None: ...
+
+    def upsert(self, profile: UserProfile) -> UserProfile: ...
+
+    def is_registered(self, keycloak_sub: str) -> bool: ...
+
+
+class GroupRepository(Protocol):
+    def get(self, name: str) -> GroupDefinition | None: ...
+
+    def upsert(self, group: GroupDefinition) -> GroupDefinition: ...
+
+    def list_all(self) -> list[GroupDefinition]: ...
+
+    def delete(self, name: str) -> bool: ...
+
+
+class GroupMembershipRepository(Protocol):
+    def add(self, membership: UserGroupMembership) -> UserGroupMembership: ...
+
+    def remove(self, keycloak_sub: str, group_name: str) -> bool: ...
+
+    def has_membership(self, keycloak_sub: str, group_name: str) -> bool: ...
+
+    def list_for_user(self, keycloak_sub: str) -> list[UserGroupMembership]: ...
+
+    def list_for_group(self, group_name: str) -> list[UserGroupMembership]: ...
+
+    def count_members(self, group_name: str) -> int: ...
+
+
+class TokenRepository(Protocol):
+    def get(self, token_id: str) -> IssuedTokenRecord | None: ...
+
+    def upsert(self, record: IssuedTokenRecord) -> IssuedTokenRecord: ...
+
+    def list_for_user(self, owner_sub: str) -> list[IssuedTokenRecord]: ...
+
+
+class AuditEventRepository(Protocol):
+    def append(self, event: AuditEvent) -> AuditEvent: ...
+
+    def list_all(self) -> list[AuditEvent]: ...

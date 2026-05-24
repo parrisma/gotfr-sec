@@ -1,0 +1,3 @@
+[submodule "lib/gofr-common"]
+	path = lib/gofr-common
+	url = https://github.com/parrisma/gofr-common.git
