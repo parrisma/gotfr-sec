@@ -110,6 +110,8 @@ Useful values:
 - `POST /v1/me/register`
 - `GET /v1/me`
 - `GET /v1/me/tokens`
+- `GET /v1/runtime/keys/public`
+- `POST /v1/runtime/authorize`
 - `GET /`
 - `GET /ping`
 - `GET /v1/status`
@@ -125,8 +127,9 @@ Useful values:
 
 ## Next Implementation Layer
 
-The current code is a safe bootstrap point for adding:
+The current code now includes the first runtime contract layer:
 
-- runtime authorization decisions backed by Vault
+- services can fetch runtime verification keys from `GET /v1/runtime/keys/public`
+- services can locally verify runtime JWTs and ask `POST /v1/runtime/authorize` for a yes-or-no decision
 
 The target behavior for that work is described in `docs/gofr_sec_proposal.md`.

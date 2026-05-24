@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import hashlib
@@ -9,6 +10,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 import jwt
 
 from gofr_common.auth import VerifiedIdentity
@@ -44,6 +46,8 @@ class TokenSigner(Protocol):
 
     def public_key_pem(self) -> str: ...
 
+    def public_key_document(self) -> dict[str, object]: ...
+
 
 @dataclass(frozen=True)
 class MintedTokenResult:
@@ -57,7 +61,32 @@ class MintedTokenResult:
 class _LoadedSigningMaterial:
     private_key_pem: str
     public_key_pem: str
-    kid: str | None
+    kid: str
+
+
+def _b64url_uint(value: int) -> str:
+    raw = value.to_bytes((value.bit_length() + 7) // 8, "big")
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _derive_kid(public_key_pem: str) -> str:
+    return hashlib.sha256(public_key_pem.encode("ascii")).hexdigest()[:16]
+
+
+def _public_key_to_jwk(public_key_pem: str, *, kid: str, algorithm: str) -> dict[str, str]:
+    public_key = serialization.load_pem_public_key(public_key_pem.encode("ascii"))
+    if not isinstance(public_key, rsa.RSAPublicKey):
+        raise SigningKeyUnavailableError("Runtime verification currently requires RSA keys")
+
+    public_numbers = public_key.public_numbers()
+    return {
+        "kid": kid,
+        "kty": "RSA",
+        "alg": algorithm,
+        "use": "sig",
+        "n": _b64url_uint(public_numbers.n),
+        "e": _b64url_uint(public_numbers.e),
+    }
 
 
 class StaticTokenSigner:
@@ -83,11 +112,13 @@ class StaticTokenSigner:
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         ).decode("ascii")
 
+        resolved_key_id = key_id or _derive_kid(public_key_pem)
+
         self._private_key_pem = raw_private_key
         self._public_key_pem = public_key_pem
         self._algorithm = algorithm
         self._issuer = issuer
-        self._key_id = key_id
+        self._key_id = resolved_key_id
 
     def sign_token(
         self,
@@ -117,6 +148,17 @@ class StaticTokenSigner:
 
     def public_key_pem(self) -> str:
         return self._public_key_pem
+
+    def public_key_document(self) -> dict[str, object]:
+        return {
+            "keys": [
+                _public_key_to_jwk(
+                    self._public_key_pem,
+                    kid=self._key_id,
+                    algorithm=self._algorithm,
+                )
+            ]
+        }
 
 
 class VaultTokenSigner:
@@ -160,7 +202,7 @@ class VaultTokenSigner:
         return _LoadedSigningMaterial(
             private_key_pem=private_key_pem,
             public_key_pem=public_key_pem,
-            kid=key_id if isinstance(key_id, str) else None,
+            kid=(key_id if isinstance(key_id, str) and key_id.strip() else _derive_kid(public_key_pem)),
         )
 
     def sign_token(
@@ -192,6 +234,18 @@ class VaultTokenSigner:
 
     def public_key_pem(self) -> str:
         return self._load_signing_material().public_key_pem
+
+    def public_key_document(self) -> dict[str, object]:
+        material = self._load_signing_material()
+        return {
+            "keys": [
+                _public_key_to_jwk(
+                    material.public_key_pem,
+                    kid=material.kid,
+                    algorithm=self._algorithm,
+                )
+            ]
+        }
 
 
 def build_token_signer(

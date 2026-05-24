@@ -6,6 +6,7 @@ from app.api.routes import (
     admin_tokens_router,
     health_router,
     me_router,
+    runtime_router,
 )
 from app.bootstrap import initialize_application_state
 
@@ -33,6 +34,7 @@ class GofrSecWebServer:
         self.app.include_router(admin_memberships_router)
         self.app.include_router(admin_tokens_router)
         self.app.include_router(me_router)
+        self.app.include_router(runtime_router)
         self.app.include_router(health_router)
 
     def _startup(self) -> None:
