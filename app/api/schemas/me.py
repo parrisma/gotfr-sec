@@ -25,3 +25,13 @@ class MeProfileResponse(BaseModel):
     registered_at: datetime | None = None
     updated_at: datetime | None = None
     groups: list[str]
+
+
+class MeTokenResponse(BaseModel):
+    token_id: str
+    granted_groups: list[str]
+    status: Literal["active", "revoked"]
+    issued_at: datetime
+    expires_at: datetime | None = None
+    revoked_at: datetime | None = None
+    issued_by_sub: str | None = None

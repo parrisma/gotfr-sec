@@ -25,12 +25,14 @@ def _serialize_token(record: IssuedTokenRecord) -> dict[str, object]:
         "issued_by_sub": record.issued_by_sub,
         "jwt_hash": record.jwt_hash,
         "pending_reveal": record.pending_reveal,
+        "revoked_at": record.revoked_at.isoformat() if record.revoked_at else None,
     }
 
 
 def _deserialize_token(data: dict[str, object]) -> IssuedTokenRecord:
     issued_at = _parse_datetime(data.get("issued_at") if isinstance(data.get("issued_at"), str) else None)
     expires_at = _parse_datetime(data.get("expires_at") if isinstance(data.get("expires_at"), str) else None)
+    revoked_at = _parse_datetime(data.get("revoked_at") if isinstance(data.get("revoked_at"), str) else None)
     raw_groups = data.get("granted_groups", [])
     groups = tuple(str(group) for group in raw_groups) if isinstance(raw_groups, list) else ()
     return IssuedTokenRecord(
@@ -43,6 +45,7 @@ def _deserialize_token(data: dict[str, object]) -> IssuedTokenRecord:
         issued_by_sub=data.get("issued_by_sub") if isinstance(data.get("issued_by_sub"), str) or data.get("issued_by_sub") is None else str(data.get("issued_by_sub")),
         jwt_hash=data.get("jwt_hash") if isinstance(data.get("jwt_hash"), str) or data.get("jwt_hash") is None else str(data.get("jwt_hash")),
         pending_reveal=bool(data.get("pending_reveal", False)),
+        revoked_at=revoked_at,
     )
 
 

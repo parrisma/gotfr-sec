@@ -57,6 +57,7 @@ class IssuedTokenRecord:
     issued_by_sub: str | None = None
     jwt_hash: str | None = None
     pending_reveal: bool = False
+    revoked_at: datetime | None = None
 
 
 @dataclass(frozen=True)

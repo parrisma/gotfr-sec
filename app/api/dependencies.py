@@ -8,6 +8,7 @@ from gofr_common.auth import AccessTokenVerificationError, AccessTokenVerifier, 
 
 from app.bootstrap import RepositoryBundle
 from app.domain.rules import RESERVED_ADMIN_GROUP
+from app.services.token_service import TokenSigner
 from app.settings import GofrSecServiceSettings
 
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -23,6 +24,16 @@ def get_service_settings_dependency(request: Request) -> GofrSecServiceSettings:
 
 def get_access_token_verifier(request: Request) -> AccessTokenVerifier:
     return request.app.state.access_token_verifier
+
+
+def get_token_signer(request: Request) -> TokenSigner:
+    signer = getattr(request.app.state, "token_signer", None)
+    if signer is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Token signing is unavailable",
+        )
+    return signer
 
 
 def get_verified_identity(

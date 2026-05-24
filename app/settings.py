@@ -71,15 +71,20 @@ class BootstrapAdminSettings:
 class SigningSettings:
     """Signing-key configuration for gofr-sec-issued JWTs."""
 
-    key_path: Path | None = None
+    vault_path: str | None = None
     algorithm: str = "RS256"
+    issuer: str = "gofr-sec"
+    default_lifetime_seconds: int = 3600
 
     @classmethod
     def from_env(cls, prefix: str = _ENV_PREFIX) -> "SigningSettings":
-        key_path = os.getenv(f"{prefix}_SIGNING_KEY_PATH")
         return cls(
-            key_path=Path(key_path) if key_path else None,
+            vault_path=os.getenv(f"{prefix}_SIGNING_VAULT_PATH"),
             algorithm=os.getenv(f"{prefix}_SIGNING_ALGORITHM", "RS256").upper(),
+            issuer=os.getenv(f"{prefix}_TOKEN_ISSUER", "gofr-sec"),
+            default_lifetime_seconds=int(
+                os.getenv(f"{prefix}_TOKEN_DEFAULT_LIFETIME_S", "3600")
+            ),
         )
 
 

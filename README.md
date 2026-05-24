@@ -14,9 +14,9 @@ The repository currently contains:
 - the working design proposal in `docs/gofr_sec_proposal.md`
 - a minimal FastAPI service in `app/`
 
-The service is intentionally small at this stage. It exposes health and status
-routes so the project can be installed and started while the real auth, token,
-and group-management APIs are built out.
+The service now exposes the first real auth-management surface: admin group and
+membership APIs, explicit self-registration and profile reads, and Phase 6
+token mint, inspect, revoke, and self metadata-list APIs.
 
 ## Run The Placeholder Service
 
@@ -65,6 +65,10 @@ repositories when Vault configuration is present.
 Useful environment values:
 
 - `GOFRSEC_BOOTSTRAP_ADMIN_SUBS`
+- `GOFRSEC_SIGNING_VAULT_PATH`
+- `GOFRSEC_SIGNING_ALGORITHM`
+- `GOFRSEC_TOKEN_ISSUER`
+- `GOFRSEC_TOKEN_DEFAULT_LIFETIME_S`
 - `GOFRSEC_VAULT_URL` or `GOFR_VAULT_URL`
 - `GOFRSEC_VAULT_TOKEN` or `GOFR_VAULT_TOKEN`
 - `GOFRSEC_VAULT_PATH_PREFIX`
@@ -77,6 +81,7 @@ Default Vault path layout under the configured prefix:
 - `users/<keycloak-sub>/tokens/<token-id>`
 - `groups/<group>/definition`
 - `groups/<group>/tokens/<token-id>`
+- `signing/runtime`
 - `tokens/<token-id>`
 
 ## Environment
@@ -99,8 +104,12 @@ Useful values:
 - `POST /v1/groups`
 - `POST /v1/users/{keycloakSub}/groups/{group}`
 - `DELETE /v1/users/{keycloakSub}/groups/{group}`
+- `POST /v1/users/{keycloakSub}/tokens`
+- `GET /v1/tokens/{tokenId}`
+- `POST /v1/tokens/{tokenId}/revoke`
 - `POST /v1/me/register`
 - `GET /v1/me`
+- `GET /v1/me/tokens`
 - `GET /`
 - `GET /ping`
 - `GET /v1/status`
@@ -118,7 +127,6 @@ Useful values:
 
 The current code is a safe bootstrap point for adding:
 
-- token issuance and revocation
 - runtime authorization decisions backed by Vault
 
 The target behavior for that work is described in `docs/gofr_sec_proposal.md`.

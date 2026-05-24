@@ -29,5 +29,13 @@ class UnregisteredUserError(DomainError):
     """Raised when an operation requires a registered GOFR user."""
 
 
+class TokenNotFoundError(DomainError):
+    """Raised when an operation references a missing token record."""
+
+
+class SigningKeyUnavailableError(DomainError):
+    """Raised when token signing material is unavailable."""
+
+
 class TokenRevealNotAllowedError(DomainError):
     """Raised when raw JWT reveal is disabled or unavailable."""

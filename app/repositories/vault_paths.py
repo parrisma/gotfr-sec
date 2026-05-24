@@ -49,3 +49,6 @@ class VaultPathLayout:
 
     def token_path(self, token_id: str) -> str:
         return f"{self.tokens_root()}/{token_id}"
+
+    def signing_key_path(self) -> str:
+        return f"{self.path_prefix}/signing/runtime"

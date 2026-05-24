@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, Request
 from gofr_common.auth import VerifiedIdentity
 
 from app.api.dependencies import get_repository_bundle, get_verified_identity
-from app.api.schemas.me import MeProfileResponse, MeRegisterResponse
+from app.api.schemas.me import MeProfileResponse, MeRegisterResponse, MeTokenResponse
 from app.bootstrap import RepositoryBundle
+from app.services.token_service import UserTokenService
 from app.services.user_registration_service import UserRegistrationService
 
 router = APIRouter(tags=["me"])
@@ -74,3 +75,34 @@ async def get_me(
         updated_at=profile_view.updated_at,
         groups=list(profile_view.groups),
     )
+
+
+@router.get(
+    "/v1/me/tokens",
+    response_model=list[MeTokenResponse],
+    summary="List current user's GOFR tokens",
+    description=(
+        "Requires a verified Keycloak bearer token. Returns metadata for token "
+        "records already associated with the caller subject without revealing raw JWTs."
+    ),
+)
+async def get_my_tokens(
+    request: Request,
+    identity: VerifiedIdentity = Depends(get_verified_identity),
+    bundle: RepositoryBundle = Depends(get_repository_bundle),
+) -> list[MeTokenResponse]:
+    service = UserTokenService(bundle.tokens, bundle.audit)
+    correlation_id = request.headers.get("X-Correlation-ID")
+    records = service.list_self_tokens(identity, correlation_id=correlation_id)
+    return [
+        MeTokenResponse(
+            token_id=record.token_id,
+            granted_groups=list(record.granted_groups),
+            status=record.status,
+            issued_at=record.issued_at,
+            expires_at=record.expires_at,
+            revoked_at=record.revoked_at,
+            issued_by_sub=record.issued_by_sub,
+        )
+        for record in records
+    ]

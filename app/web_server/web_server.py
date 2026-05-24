@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api.routes import (
     admin_groups_router,
     admin_memberships_router,
+    admin_tokens_router,
     health_router,
     me_router,
 )
@@ -30,6 +31,7 @@ class GofrSecWebServer:
     def _register_routes(self) -> None:
         self.app.include_router(admin_groups_router)
         self.app.include_router(admin_memberships_router)
+        self.app.include_router(admin_tokens_router)
         self.app.include_router(me_router)
         self.app.include_router(health_router)
 

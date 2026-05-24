@@ -27,6 +27,7 @@ from app.repositories.vault_paths import VaultPathLayout
 from app.repositories.vault_tokens import VaultTokenRepository
 from app.repositories.vault_users import VaultUserRepository
 from app.services import BootstrapPlan, BootstrapService
+from app.services.token_service import build_token_signer
 from app.settings import GofrSecServiceSettings, get_service_settings
 
 
@@ -75,6 +76,7 @@ def initialize_application_state(app: FastAPI) -> BootstrapPlan:
     """Initialize repositories and apply first-boot bootstrap state."""
     settings = get_service_settings(reload=False, require_auth=False)
     bundle = build_repository_bundle(settings)
+    paths = VaultPathLayout(path_prefix=settings.vault.path_prefix)
     bootstrap_service = BootstrapService(bundle.groups, bundle.memberships)
     access_token_verifier = AccessTokenVerifier.from_settings(
         KeycloakVerifierSettings(
@@ -83,11 +85,17 @@ def initialize_application_state(app: FastAPI) -> BootstrapPlan:
             jwks_cache_ttl_seconds=settings.cache.public_key_ttl_seconds,
         )
     )
+    token_signer = build_token_signer(
+        vault_client=bundle.vault_client,
+        paths=paths,
+        settings=settings.signing,
+    )
     plan = bootstrap_service.apply_plan(settings.bootstrap.trusted_subs)
 
     app.state.service_settings = settings
     app.state.repositories = bundle
     app.state.access_token_verifier = access_token_verifier
+    app.state.token_signer = token_signer
     app.state.bootstrap_plan = plan
     app.state.storage_backend = bundle.storage_backend
 
